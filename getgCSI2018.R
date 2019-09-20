@@ -20,7 +20,7 @@ nthread=1
 options(stringsAsFactors = FALSE)
 z <- list()
 
-dir.prefix <- "~/pfs"
+dir.prefix <- "pfs"
 
 matchToIDTable <- function(ids,tbl, column, returnColumn="unique.cellid") {
   sapply(ids, function(x) {
@@ -203,6 +203,8 @@ gCSI_2018 <- PharmacoSet(molecularProfiles=z,
                          curationDrug=curationDrug,
                          curationTissue=curationTissue,
                          datasetType="sensitivity")
+
+save(gCSI_2018, file="/pfs/out/gCSI_2018.RData")
 
 # #rna-seq (processed - Zhaleh)
 
