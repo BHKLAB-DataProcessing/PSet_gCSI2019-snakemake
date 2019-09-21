@@ -99,12 +99,14 @@ stopifnot(!anyNA(reps))
 cnv$cellid <- reps
 # cnv$tissueid <- curationTissue[cnv$cellid, "unique.tissueid"]
 
+message("mapping sensitivity cells")
 sensitivity.info$cellid <- sensitivity.info$CellLineName
 mapInfo <- data.frame(gCSI.cellid = unique(sensitivity.info$cellid), 
                       unique.cellid = matchToIDTable(unique(sensitivity.info$cellid), curationCell, "gCSI.cellid", "unique.cellid"))
 stopifnot(!anyNA(mapInfo[,2]))
 sensitivity.info$cellid <- mapInfo[match(sensitivity.info$cellid, mapInfo[,1]),2]
 
+message("mapping sensitivity drugs")
 
 sensitivity.info$drugid <- sensitivity.info$DrugName
 mapInfo <- data.frame(gCSI.drugid = unique(sensitivity.info$drugid), 
