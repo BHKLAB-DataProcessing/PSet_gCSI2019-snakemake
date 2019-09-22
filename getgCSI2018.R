@@ -122,6 +122,37 @@ stopifnot(!anyNA(reps))
 rnaseq$cellid <- reps
 # rnaseq$tissueid <- curationTissue[rnaseq$cellid, "unique.tissueid"]
 
+
+
+rnaseq.counts <- gCSI@molecularProfiles$rnaseq.counts
+
+rnaseq.counts$cellid <- rnaseq.counts$Cell_line
+
+reps <- matchToIDTable(rnaseq.counts$cellid, curationCell, "GNE.cellid", "unique.cellid")
+stopifnot(!anyNA(reps))
+rnaseq.counts$cellid <- reps
+
+
+isoforms <- gCSI@molecularProfiles$isoforms
+
+isoforms$cellid <- isoforms$Cell_line
+
+reps <- matchToIDTable(isoforms$cellid, curationCell, "GNE.cellid", "unique.cellid")
+stopifnot(!anyNA(reps))
+isoforms$cellid <- reps
+# rnaseq$tissueid <- curationTissue[rnaseq$cellid, "unique.tissueid"]
+
+
+isoforms.counts <- gCSI@molecularProfiles$isoforms.counts
+
+isoforms.counts$cellid <- isoforms.counts$Cell_line
+
+reps <- matchToIDTable(isoforms.counts$cellid, curationCell, "GNE.cellid", "unique.cellid")
+stopifnot(!anyNA(reps))
+isoforms.counts$cellid <- reps
+
+
+
 reps <- matchToIDTable(rownames(cellInfo), curationCell, "gCSI.cellid", "unique.cellid")
 stopifnot(!anyNA(reps))
 rownames(cellInfo) <- reps
@@ -188,6 +219,9 @@ z <- list()
 
 z <- c(z,c(
   "rnaseq"=rnaseq,
+  "rnaseq.counts" = rnaseq.counts,
+  "isoforms" = isoforms,
+  "isoforms.counts" = isoforms.counts,
   "cnv"=cnv,
   "mutation" = mut)
 )
