@@ -238,7 +238,7 @@ gCSI_2018 <- PharmacoSet(molecularProfiles=z,
                          curationTissue=curationTissue,
                          datasetType="sensitivity")
 
-save(gCSI_2018, file="/pfs/out/gCSI_2018.RData")
+saveRDS(gCSI_2018, file="/pfs/out/gCSI_2018.rds")
 
 # #rna-seq (processed - Zhaleh)
 
