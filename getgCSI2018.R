@@ -215,6 +215,19 @@ cellInfo$tissueid <- curationTissue[rownames(cellInfo), "unique.tissueid"]
 
 # rownames(sensitivityInfo_2018) <- tt
 
+
+drugsPresent <- sort(unique(sensitivity.info$drugid))
+
+druginfo <- curationDrug[drugsPresent,]
+
+drug_all <- read.csv("/pfs/downAnnotations/drugs_with_ids.csv", na.strings=c("", " ", "NA"))
+drug_all <- drug_all[which(!is.na(drug_all[ , "gCSI.drugid"])),]
+drug_all <- drug_all[ , c("unique.drugid", "gCSI.drugid","smiles","inchikey","cid","FDA")]
+rownames(drug_all) <- drug_all[ , "unique.drugid"]
+
+drug_all <- drug_all[rownames(druginfo),]
+druginfo[,c("smiles","inchikey","cid","FDA")] <- drug_all[,c("smiles","inchikey","cid","FDA")]
+
 z <- list()
 
 z <- c(z,c(
@@ -229,7 +242,7 @@ z <- c(z,c(
 gCSI_2018 <- PharmacoSet(molecularProfiles=z,
                          name="gCSI",
                          cell=cellInfo,
-                         drug=curationDrug,
+                         drug=druginfo,
                          sensitivityInfo=sensitivity.info,
                          sensitivityRaw=raw.sensitivity,
                          sensitivityProfiles=sensitivityProfiles_2018,
