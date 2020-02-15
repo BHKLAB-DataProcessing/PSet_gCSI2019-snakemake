@@ -400,9 +400,9 @@ return(list("noisy"=noisy, "ok"=acceptable))
   return(max(cum.sum))
 }
 		 
-noisy_out <- filterNoisyCurves2(gCSI_2018)
-print("filter done")
-gCSI_2018@sensitivity$profiles[noisy_out$noisy, ] <- NA                
+#noisy_out <- filterNoisyCurves2(gCSI_2018)
+#print("filter done")
+#gCSI_2018@sensitivity$profiles[noisy_out$noisy, ] <- NA                
                           
 saveRDS(gCSI_2018, file="/pfs/out/gCSI_2018.rds")
 
