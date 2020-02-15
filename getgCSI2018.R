@@ -10,6 +10,7 @@ library(Biobase)
 library(reshape2)
 library(abind)
 library(data.table)
+library(parallel)
 
 verbose=FALSE
 nthread=1
@@ -350,7 +351,7 @@ gCSI_2018 <- PharmacoSet(molecularProfiles=z,
 		 
 
 filterNoisyCurves2 <- function(pSet, epsilon=25 , positive.cutoff.percent=.80, mean.viablity=200, nthread=1) {
-acceptable <- mclapply(rownames(sensitivityInfo(pSet)), function(xp) {
+acceptable <- mclapply(rownames(PharmacoGx::sensitivityInfo(pSet)), function(xp) {
   #for(xp in rownames(sensitivityInfo(pSet))){
   drug.responses <- as.data.frame(apply(pSet@sensitivity$raw[xp , ,], 2, as.numeric), stringsAsFactors=FALSE)
   if (!all(is.na(drug.responses))){
@@ -400,9 +401,9 @@ return(list("noisy"=noisy, "ok"=acceptable))
   return(max(cum.sum))
 }
 		 
-#noisy_out <- filterNoisyCurves2(gCSI_2018)
-#print("filter done")
-#gCSI_2018@sensitivity$profiles[noisy_out$noisy, ] <- NA                
+noisy_out <- filterNoisyCurves2(gCSI_2018)
+print("filter done")
+gCSI_2018@sensitivity$profiles[noisy_out$noisy, ] <- NA                
                           
 saveRDS(gCSI_2018, file="/pfs/out/gCSI_2018.rds")
 
