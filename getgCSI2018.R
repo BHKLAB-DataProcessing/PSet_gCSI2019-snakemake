@@ -236,6 +236,7 @@ z <- c(z,c(
   "mutation" = mut)
 )
 
+sensitivity.info <- as.data.frame(sensitivity.info)
 
 standardizeRawDataConcRange <- function(sens.info, sens.raw){
 	unq.drugs <- unique(sens.info$drugid)
