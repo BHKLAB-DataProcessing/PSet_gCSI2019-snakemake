@@ -349,7 +349,8 @@ gCSI_2018 <- PharmacoSet(molecularProfiles=z,
                  
  #filter noisy curves from PSet (modified function to take into account standardized conc range)
 		 
-
+library(PharmacoGx)
+		 
 filterNoisyCurves2 <- function(pSet, epsilon=25 , positive.cutoff.percent=.80, mean.viablity=200, nthread=1) {
 acceptable <- mclapply(rownames(PharmacoGx::sensitivityInfo(pSet)), function(xp) {
   #for(xp in rownames(sensitivityInfo(pSet))){
