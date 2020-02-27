@@ -16,7 +16,26 @@ verbose=FALSE
 nthread=1
             
 options(stringsAsFactors = FALSE)
-z <- list()
+
+myDirPrefix <- "/pfs/"
+args = commandArgs(trailingOnly=TRUE)
+rnaseq_select <- args
+print(rnaseq_select)
+rnaseq_results <- list()
+ORCESTRA_ID = tail(rnaseq_select, n=1)
+
+	  
+tools <- grep(pattern = 'Kallisto|Salmon', x = rnaseq_select)
+tools <- rnaseq_select[tools]
+tools <- gsub("-", "_", tools)
+transcriptome <- grep(pattern = 'Gencode|Ensembl', x = rnaseq_select)
+transcriptome <- rnaseq_select[transcriptome]
+tool_path = expand.grid(a = tools,b = transcriptome)
+tool_path = paste0(tool_path$a, "_",tool_path$b)
+	  
+print(tool_path)
+
+
 
 dir.prefix <- "pfs"
 
@@ -110,46 +129,148 @@ mapInfo <- data.frame(gCSI.drugid = unique(sensitivity.info$drugid),
 stopifnot(!anyNA(mapInfo[,2]))
 sensitivity.info$drugid <- mapInfo[match(sensitivity.info$drugid, mapInfo[,1]),2]
 
+summarizeRnaSeq <- function (dir, 
+                             features_annotation,
+                             samples_annotation,
+			      method) {
+  library(Biobase)
+  library(readr)
+  library(tximport)
+  
+  load(features_annotation)
+    
+  tx2gene <- as.data.frame(cbind("transcript"=tx2gene$transcripts, "gene"=tx2gene$genes))
+  
+  files <- list.files(dir, recursive = TRUE, full.names = T)
+  if(method=="kallisto"){
+  resFiles <- grep("abundance.h5", files)
+  }else{
+  resFiles <- grep("quant.sf", files)
+  }
+  resFiles <- files[resFiles]
+  length(resFiles)
+  names(resFiles) <- basename(dirname(resFiles))
+  
+  if(features_annotation == "/pfs/downAnnotations/Ensembl.v99.annotation.RData"){
+  txi <- tximport(resFiles, type=method, tx2gene=tx2gene, ignoreAfterBar = TRUE, ignoreTxVersion = TRUE)
+  } else{
+  txi <- tximport(resFiles, type=method, tx2gene=tx2gene, ignoreAfterBar = TRUE, ignoreTxVersion = FALSE)	  
+  }
+	  
+  head(txi$counts[,1:5])
+  dim(txi$counts)
+	  
+  xx <- txi$abundance
+  gene.exp <- Biobase::ExpressionSet(log2(xx + 0.001))
+  fData(gene.exp) <- features_gene[featureNames(gene.exp),]
+  pData(gene.exp) <- samples_annotation[sampleNames(gene.exp),]
+  annotation(gene.exp) <- "rnaseq"
+  
+  xx <- txi$counts
+  gene.count <- Biobase::ExpressionSet(log2(xx + 1))
+  fData(gene.count) <- features_gene[featureNames(gene.count),]
+  pData(gene.count) <- samples_annotation[sampleNames(gene.count),]
+  annotation(gene.count) <- "rnaseq"
+  
+  txii <- tximport(resFiles, type=method, txOut=T)
+  
+  if(features_annotation == "/pfs/downAnnotations/Ensembl.v99.annotation.RData"){
+  #remove non-coding transcripts in ensembl 	  
+  rownames(txii$abundance) <-  gsub("\\..*","",rownames(txii$abundance))
+  txii$abundance[which(!rownames(txii$abundance)  %in% features_transcript$transcript_id)]
+  missing_transcript <- rownames(txii$abundance)[which(!rownames(txii$abundance)  %in% features_transcript$transcript_id)]
+  txii$abundance <- txii$abundance [-which(rownames(txii$abundance) %in% missing_transcript),]
+  }
+  	  
+  xx <- txii$abundance
+  transcript.exp <- Biobase::ExpressionSet(log2(xx[,1:length(resFiles)] + 0.001))
+  if(features_annotation == "/pfs/downAnnotations/Gencode.v33.annotation.RData" || features_annotation == "/pfs/downAnnotations/Gencode.v33lift37.annotation.RData"){
+  featureNames(transcript.exp) <- gsub("\\|.*","",featureNames(transcript.exp))
+  fData(transcript.exp) <- features_transcript[featureNames(transcript.exp),]
+  }else{
+  fData(transcript.exp) <- features_transcript[featureNames(transcript.exp),]
+  }
+  pData(transcript.exp) <- samples_annotation[sampleNames(transcript.exp),]
+  annotation(transcript.exp) <- "isoforms"
+  
+	  
+  if(features_annotation == "/pfs/downAnnotations/Ensembl.v99.annotation.RData"){
+  #remove non-coding transcripts in ensembl
+  rownames(txii$counts) <-  gsub("\\..*","",rownames(txii$counts))
+  txii$counts <- txii$counts [-which(rownames(txii$counts) %in% missing_transcript),]	  
+  }	  
+  xx <- txii$counts
+  transcript.count <- Biobase::ExpressionSet(log2(xx[,1:length(resFiles)] + 1))
+  if(features_annotation == "/pfs/downAnnotations/Gencode.v33.annotation.RData" || features_annotation == "/pfs/downAnnotations/Gencode.v33lift37.annotation.RData"){
+  featureNames(transcript.count) <- gsub("\\|.*","",featureNames(transcript.count))
+  fData(transcript.count) <- features_transcript[featureNames(transcript.count),]
+  }else{
+  fData(transcript.count) <- features_transcript[featureNames(transcript.count),]
+  }
+  pData(transcript.count) <- samples_annotation[sampleNames(transcript.count),]
+  annotation(transcript.count) <- "isoforms"
+  
+  return(list("rnaseq"=gene.exp, 
+              "rnaseq.counts"=gene.count, 
+              "isoforms"=transcript.exp, 
+              "isoforms.counts"=transcript.count))
+}
 
-rnaseq <- gCSI@molecularProfiles$rnaseq
 
-rnaseq$cellid <- rnaseq$Cell_line
-
-reps <- matchToIDTable(rnaseq$cellid, curationCell, "GNE.cellid", "unique.cellid")
-stopifnot(!anyNA(reps))
-rnaseq$cellid <- reps
-# rnaseq$tissueid <- curationTissue[rnaseq$cellid, "unique.tissueid"]
+rnaseq.sampleinfo <- read.csv(file="/pfs/downAnnotations/gCSI_rnaseq_meta.csv", stringsAsFactors=FALSE, row.names=1)
+rnaseq.sampleinfo[ , "cellid"] <-  matchToIDTable(ids=rnaseq.sampleinfo[ , "Cell_line"], tbl=curationCell, column = "GNE.cellid", returnColumn = "unique.cellid")
 
 
+ for (r in 1:length(tool_path)){
+  print(tool_path[r])
+  if (length(grep(pattern = 'Kallisto', x = tool_path[r])) > 0){
+    tool <- sub("(_[^_]+)_.*", "\\1", tool_path[r])
+    tdir = paste0("gray_rnaseq_",gsub(".","_",tolower(tool), fixed = T), "/",  tool, "/", tool, "/")  
+    rnatool="kallisto"	  
+  } else {
+    tool <- sub("(_[^_]+)_.*", "\\1", tool_path[r])
+    tdir = paste0("gray_rnaseq_",gsub(".","_",tolower(tool), fixed = T), "/",  tool, "/", tool, "/")
+    rnatool="salmon"	  
+  }
+  
+  
+  if (length(grep(pattern = 'lift37', x = tool_path[r])) > 0){
+    annot = "/pfs/downAnnotations/Gencode.v33lift37.annotation.RData"
+  } else if (length(grep(pattern = 'v33', x = tool_path[r])) > 0){
+    annot = "/pfs/downAnnotations/Gencode.v33.annotation.RData"
+  } else {
+    annot = "/pfs/downAnnotations/Ensembl.v99.annotation.RData"
+  }
+    print(annot)
+  
+  print(tdir)
+  rnaseq <- summarizeRnaSeq(dir=file.path(paste0(myDirPrefix, tdir, tool_path[r])),
+                            features_annotation=annot,
+                            samples_annotation=rnaseq.sampleinfo,
+			    method = rnatool)
+	 
+	 
+  reps <- matchToIDTable(rnaseq$rnaseq$Cell_line, curationCell, "GNE.cellid", "unique.cellid")
+  stopifnot(!anyNA(reps))
+  rnaseq$rnaseq$cellid <- reps
+	 
+  reps <- matchToIDTable(rnaseq$rnaseq.counts$Cell_line, curationCell, "GNE.cellid", "unique.cellid")
+  stopifnot(!anyNA(reps))
+  rnaseq$rnaseq.counts$cellid <- reps
 
-rnaseq.counts <- gCSI@molecularProfiles$rnaseq.counts
-
-rnaseq.counts$cellid <- rnaseq.counts$Cell_line
-
-reps <- matchToIDTable(rnaseq.counts$cellid, curationCell, "GNE.cellid", "unique.cellid")
-stopifnot(!anyNA(reps))
-rnaseq.counts$cellid <- reps
-
-
-isoforms <- gCSI@molecularProfiles$isoforms
-
-isoforms$cellid <- isoforms$Cell_line
-
-reps <- matchToIDTable(isoforms$cellid, curationCell, "GNE.cellid", "unique.cellid")
-stopifnot(!anyNA(reps))
-isoforms$cellid <- reps
-# rnaseq$tissueid <- curationTissue[rnaseq$cellid, "unique.tissueid"]
-
-
-isoforms.counts <- gCSI@molecularProfiles$isoforms.counts
-
-isoforms.counts$cellid <- isoforms.counts$Cell_line
-
-reps <- matchToIDTable(isoforms.counts$cellid, curationCell, "GNE.cellid", "unique.cellid")
-stopifnot(!anyNA(reps))
-isoforms.counts$cellid <- reps
-
-
+  reps <- matchToIDTable(rnaseq$isoforms$Cell_line, curationCell, "GNE.cellid", "unique.cellid")
+  stopifnot(!anyNA(reps))
+  rnaseq$isoforms$cellid <- reps
+  
+  reps <- matchToIDTable(rnaseq$isoforms.counts$Cell_line, curationCell, "GNE.cellid", "unique.cellid")
+  stopifnot(!anyNA(reps))
+  rnaseq$isoforms.counts$cellid <- reps
+  
+  rnaseq_results <- c(rnaseq_results,c(
+    rnaseq <- setNames(rnaseq,  paste0(tool,".", names(rnaseq)))
+  )
+  )
+}
 
 reps <- matchToIDTable(rownames(cellInfo), curationCell, "gCSI.cellid", "unique.cellid")
 stopifnot(!anyNA(reps))
@@ -229,10 +350,7 @@ druginfo[,c("smiles","inchikey","cid","FDA")] <- drug_all[,c("smiles","inchikey"
 z <- list()
 
 z <- c(z,c(
-  "rnaseq"=rnaseq,
-  "rnaseq.counts" = rnaseq.counts,
-  "isoforms" = isoforms,
-  "isoforms.counts" = isoforms.counts,
+  rnaseq_results,
   "cnv"=cnv,
   "mutation" = mut)
 )
