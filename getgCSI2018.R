@@ -55,7 +55,7 @@ load(file.path(dir.prefix, "gcsi2018ProfilesAssemble/profiles.RData"))
 # load(file.path(dir.prefix, "getgCSI2017/gcsidrugpost.RData"))
 load(file.path(dir.prefix, "gcsi2018SensData/sens.data.RData"))
 load(file.path(dir.prefix, "gcsi2017RawSensitivity/gCSI_molData.RData"))
-load(file.path(dir.prefix, "downloadrnagCSI/gCSI_2017_molecprofile.RData"))
+#load(file.path(dir.prefix, "downloadrnagCSI/gCSI_2017_molecprofile.RData"))
 
 
 cell_all <- read.csv(file.path(dir.prefix, "downAnnotations/cell_annotation_all.csv"), na.strings=c("", " ", "NA"))
@@ -249,7 +249,7 @@ rnaseq.sampleinfo[ , "cellid"] <-  matchToIDTable(ids=rnaseq.sampleinfo[ , "Cell
                             samples_annotation=rnaseq.sampleinfo,
 			    method = rnatool)
 	 
-	 
+  	 
   reps <- matchToIDTable(rnaseq$rnaseq$Cell_line, curationCell, "GNE.cellid", "unique.cellid")
   stopifnot(!anyNA(reps))
   rnaseq$rnaseq$cellid <- reps
@@ -272,13 +272,14 @@ rnaseq.sampleinfo[ , "cellid"] <-  matchToIDTable(ids=rnaseq.sampleinfo[ , "Cell
   )
 }
 
+rnaseq_cellid_all <- pData(rnaseq_results[[1]])[,"cellid"]
 reps <- matchToIDTable(rownames(cellInfo), curationCell, "gCSI.cellid", "unique.cellid")
 stopifnot(!anyNA(reps))
 rownames(cellInfo) <- reps
 
 cellInfo <- as.data.frame(cellInfo)
 
-cellinall <- unionList(rnaseq_results$rnaseq$cellid, sensitivity.info$cellid, cnv$cellid, mut$cellid)
+cellinall <- unionList(rnaseq_cellid_all, sensitivity.info$cellid, cnv$cellid, mut$cellid)
 
 newCells <- setdiff(cellinall, rownames(cellInfo))
 
@@ -291,7 +292,6 @@ cellInfo$tissueid <- curationTissue[rownames(cellInfo), "unique.tissueid"]
 print("rows of cellinfo")
 print(nrow(cellInfo))
 
-saveRDS(rnaseq_results, file="/pfs/out/rnaseq_results.rds")
 # removed_exp_ids <- sub("__[^_]+$", "", rownames(sensitivityProfiles_2018))
 
 # tt <- removed_exp_ids
