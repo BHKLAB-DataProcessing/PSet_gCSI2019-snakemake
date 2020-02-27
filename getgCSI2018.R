@@ -278,7 +278,7 @@ rownames(cellInfo) <- reps
 
 cellInfo <- as.data.frame(cellInfo)
 
-cellinall <- unionList(rnaseq$cellid, sensitivity.info$cellid, cnv$cellid, mut$cellid)
+cellinall <- unionList(rnaseq_results$rnaseq$cellid, sensitivity.info$cellid, cnv$cellid, mut$cellid)
 
 newCells <- setdiff(cellinall, rownames(cellInfo))
 
@@ -288,6 +288,8 @@ cellInfo <- rbind(cellInfo, newrows)
 
 cellInfo$tissueid <- curationTissue[rownames(cellInfo), "unique.tissueid"]
 
+print("rows of cellinfo")
+print(nrow(cellInfo))
 # removed_exp_ids <- sub("__[^_]+$", "", rownames(sensitivityProfiles_2018))
 
 # tt <- removed_exp_ids
