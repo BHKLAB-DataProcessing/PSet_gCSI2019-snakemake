@@ -290,6 +290,8 @@ cellInfo$tissueid <- curationTissue[rownames(cellInfo), "unique.tissueid"]
 
 print("rows of cellinfo")
 print(nrow(cellInfo))
+
+saveRDS(rnaseq_results, file="/pfs/out/rnaseq_results.rds")
 # removed_exp_ids <- sub("__[^_]+$", "", rownames(sensitivityProfiles_2018))
 
 # tt <- removed_exp_ids
