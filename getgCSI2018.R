@@ -55,7 +55,7 @@ load(file.path(dir.prefix, "gcsi2018ProfilesAssemble/profiles.RData"))
 # load(file.path(dir.prefix, "getgCSI2017/gcsidrugpost.RData"))
 load(file.path(dir.prefix, "gcsi2018SensData/sens.data.RData"))
 load(file.path(dir.prefix, "gcsi2017RawSensitivity/gCSI_molData.RData"))
-load(file.path(dir.prefix, "downloadrnagCSI/gCSI_2017_molecprofile.RData"))
+#load(file.path(dir.prefix, "downloadrnagCSI/gCSI_2017_molecprofile.RData"))
 
 
 cell_all <- read.csv(file.path(dir.prefix, "downAnnotations/cell_annotation_all.csv"), na.strings=c("", " ", "NA"))
