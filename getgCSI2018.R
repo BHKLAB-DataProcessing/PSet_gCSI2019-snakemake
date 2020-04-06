@@ -277,6 +277,7 @@ reps <- matchToIDTable(rownames(cellInfo), curationCell, "gCSI.cellid", "unique.
 stopifnot(!anyNA(reps))
 rownames(cellInfo) <- reps
 
+#add missing cell lines to cell info
 cellInfo <- as.data.frame(cellInfo)
 
 cellinall <- unionList(rnaseq_cellid_all, sensitivity.info$cellid, cnv$cellid, mut$cellid)
@@ -289,6 +290,9 @@ cellInfo <- rbind(cellInfo, newrows)
 
 cellInfo$tissueid <- curationTissue[rownames(cellInfo), "unique.tissueid"]
 cellInfo$cellid <- rownames(cellInfo)
+curationTissue <- curationTissue[rownames(cellInfo),]
+curationCell <- curationCell[rownames(cellInfo),]
+
 print("rows of cellinfo")
 print(nrow(cellInfo))
 
