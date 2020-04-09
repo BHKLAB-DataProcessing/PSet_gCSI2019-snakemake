@@ -456,30 +456,30 @@ standardizeRawDataConcRange <- function(sens.info, sens.raw){
 }
 		 
 #add cellosaurus disease type to cell-info
-disease <- cell_all$Cellosaurus.Disease.Type[match(cellInfo$cellid, cell_all$unique.cellid)]
+colnames(cellInfo)[which(names(cellInfo) == "cellid")] <- "unique.cellid"
+disease <- cell_all$Cellosaurus.Disease.Type[match(cellInfo$unique.cellid, cell_all$unique.cellid)]
 cellInfo$Cellosaurus.Disease.Type <- disease		 
 	 
 #add cellosaurus assession to cell-info
-assession <- cell_all$Cellosaurus.Accession.id[match(cellInfo$cellid, cell_all$unique.cellid)]
+assession <- cell_all$Cellosaurus.Accession.id[match(cellInfo$unique.cellid, cell_all$unique.cellid)]
 cellInfo$Cellosaurus.Accession.id <- assession
 		 
 #add pharmacodb id to cell-info
-pdb <- cell_all$PharmacoDB.id[match(cellInfo$cellid, cell_all$unique.cellid)]
+pdb <- cell_all$PharmacoDB.id[match(cellInfo$unique.cellid, cell_all$unique.cellid)]
 cellInfo$PharmacoDB.id <- pdb
 
 #add study tissue id to cell_info
-study_tissue <- cell_all$unique.tissueid.fromstudies[match(cellInfo$cellid, cell_all$unique.cellid)]
+study_tissue <- cell_all$unique.tissueid.fromstudies[match(cellInfo$unique.cellid, cell_all$unique.cellid)]
 cellInfo$unique.tissueid.fromstudies <- study_tissue
 		 
 #add study cell-line type to cell_info
-cell_type <- cell_all$CellLine.Type[match(cellInfo$cellid, cell_all$unique.cellid)]
+cell_type <- cell_all$CellLine.Type[match(cellInfo$unique.cellid, cell_all$unique.cellid)]
 cellInfo$CellLine.Type <- cell_type
 		 
 #add metastatic info to cell_info		 
-metastatic <- cell_all$Metastatic[match(cellInfo$cellid, cell_all$unique.cellid)]
+metastatic <- cell_all$Metastatic[match(cellInfo$unique.cellid, cell_all$unique.cellid)]
 cellInfo$Metastatic <- metastatic
 		 
-
 standardize <- standardizeRawDataConcRange(sens.info = sensitivity.info, sens.raw = raw.sensitivity)
 		 
 
@@ -563,153 +563,4 @@ write.table(dataset, file="/pfs/out/dataset.txt", row.names = F ,quote = F, sep 
 write.table(ORCESTRA_ID, file="/pfs/out/orcestra_id.txt", row.names = F ,quote = F, sep = "\t", col.names = F)				   
 pach_commit_id <- Sys.getenv("PACH_OUTPUT_COMMIT_ID")
 write.table(pach_commit_id, file="/pfs/out/commit_id.txt", row.names = F ,quote = F, sep = "\t", col.names = F) 
-
-# #rna-seq (processed - Zhaleh)
-
-# load("/Users/anthonymammoliti/Desktop/gCSI_kallisto.RData")
-
-# gCSI@molecularProfiles$rnaseq@phenoData@data$cellid[1] <- "888-mel"
-# gCSI@molecularProfiles$rnaseq$cellid[1] <- "888-mel"
-
-# gCSI@molecularProfiles$rnaseq$cellid[which(!gCSI@molecularProfiles$rnaseq$cellid %in% cellosaurus$lab_annotation)] <- c("DOV13","NCI-H322","Hs 695T","NCI-H322","OVCAR-3","OVCA433","Rh30","SR")
-# gCSI@molecularProfiles$rnaseq@phenoData@data$cellid[which(!gCSI@molecularProfiles$rnaseq@phenoData@data$cellid %in% cellosaurus$lab_annotation)] <- c("DOV13","NCI-H322","Hs 695T","NCI-H322","OVCAR-3","OVCA433","Rh30","SR")
-
-# gCSI@molecularProfiles$rnaseq$cellid <- cellosaurus$cellosaurus.name[match(gCSI@molecularProfiles$rnaseq$cellid, cellosaurus$lab_annotation)]
-
-# gCSI_cellname <- gCSI@molecularProfiles$rnaseq@phenoData@data$Cell_line[which(!gCSI@molecularProfiles$rnaseq$cellid %in% curationCell$unique.cellid)]
-
-# curationCell[570:788,] <- NA
-
-# curationCell$gCSI.cellid[570:788] <- gCSI_cellname
-# curationCell$unique.cellid[570:788] <- gCSI@molecularProfiles$rnaseq$cellid[which(!gCSI@molecularProfiles$rnaseq$cellid %in% curationCell$unique.cellid)]
-
-# #rna-seq isoforms (processed - Zhaleh)
-# gCSI@molecularProfiles$isoforms@phenoData@data$cellid[1] <- "888-mel"
-# gCSI@molecularProfiles$isoforms$cellid[1] <- "888-mel"
-# gCSI@molecularProfiles$isoforms$cellid[which(!gCSI@molecularProfiles$isoforms$cellid %in% cellosaurus$lab_annotation)] <- c("DOV13","NCI-H322","Hs 695T","NCI-H322","OVCAR-3","OVCA433","Rh30","SR")
-# gCSI@molecularProfiles$isoforms@phenoData@data$cellid[which(!gCSI@molecularProfiles$isoforms@phenoData@data$cellid %in% cellosaurus$lab_annotation)] <- c("DOV13","NCI-H322","Hs 695T","NCI-H322","OVCAR-3","OVCA433","Rh30","SR")
-
-# gCSI@molecularProfiles$isoforms$cellid <- cellosaurus$cellosaurus.name[match(gCSI@molecularProfiles$isoforms$cellid, cellosaurus$lab_annotation)]
-
-# #rna-seq counts (processed - Zhaleh)
-# gCSI@molecularProfiles$rnaseq.counts@phenoData@data$cellid[1] <- "888-mel"
-# gCSI@molecularProfiles$rnaseq.counts$cellid[1] <- "888-mel"
-# gCSI@molecularProfiles$rnaseq.counts$cellid[which(!gCSI@molecularProfiles$rnaseq.countscellid %in% cellosaurus$lab_annotation)] <- c("DOV13","NCI-H322","Hs 695T","NCI-H322","OVCAR-3","OVCA433","Rh30","SR")
-# gCSI@molecularProfiles$rnaseq.counts@phenoData@data$cellid[which(!gCSI@molecularProfiles$rnaseq.counts@phenoData@data$cellid %in% cellosaurus$lab_annotation)] <- c("DOV13","NCI-H322","Hs 695T","NCI-H322","OVCAR-3","OVCA433","Rh30","SR")
-
-# gCSI@molecularProfiles$rnaseq.counts$cellid <- cellosaurus$cellosaurus.name[match(gCSI@molecularProfiles$rnaseq.counts$cellid, cellosaurus$lab_annotation)]
-
-
-# #rna-seq isoform counts (processed - Zhaleh)
-
-# gCSI@molecularProfiles$isoforms.counts@phenoData@data$cellid[1] <- "888-mel"
-# gCSI@molecularProfiles$isoforms.counts$cellid[1] <- "888-mel"
-# gCSI@molecularProfiles$isoforms.counts$cellid[which(!gCSI@molecularProfiles$isoforms.counts$cellid %in% cellosaurus$lab_annotation)] <- c("DOV13","NCI-H322","Hs 695T","NCI-H322","OVCAR-3","OVCA433","Rh30","SR")
-# gCSI@molecularProfiles$isoforms.counts@phenoData@data$cellid[which(!gCSI@molecularProfiles$isoforms.counts@phenoData@data$cellid %in% cellosaurus$lab_annotation)] <- c("DOV13","NCI-H322","Hs 695T","NCI-H322","OVCAR-3","OVCA433","Rh30","SR")
-
-# gCSI@molecularProfiles$isoforms.counts$cellid <- cellosaurus$cellosaurus.name[match(gCSI@molecularProfiles$isoforms.counts$cellid, cellosaurus$lab_annotation)]
-
-# #cnv
-
-# gCSI@molecularProfiles$cnv$cellid[231] <- "SNU-16"
-# gCSI@molecularProfiles$cnv$cellid[282] <- "U266B1"
-# gCSI@molecularProfiles$cnv$cellid <- cellosaurus$cellosaurus.name[match(gCSI@molecularProfiles$cnv$cellid, cellosaurus$lab_annotation)]
-
-
-
-# curationCell[789,] <- NA
-# curationCell$gCSI.cellid[789] <- "HEC-1"
-# curationCell$unique.cellid[789] <- "HEC-1"
-
-# curationCell <- curationCell[c(-675,-727),] 
-
-# rownames(curationCell) <- curationCell$unique.cellid
-
-# curationDrug <- data.frame("unique.drugid"=unique(sensitivityInfo_2018$drugid), "gCSI.drugid"=unique(sensitivityInfo_2018$DrugName))
-# rownames(curationDrug) <- curationDrug$unique.drugid
-
-# curationTissue <- gCSI_2018@curation$tissue
-
-# curationTissue_missing <- curationCell$gCSI.cellid[which(!curationCell$gCSI.cellid %in% rownames(curationTissue))]
-# curationTissue <- curationTissue[which(rownames(curationTissue) %in% curationCell$gCSI.cellid),]
-# curationTissue_uniqueid <- curationCell$unique.cellid[match(rownames(curationTissue),curationCell$gCSI.cellid)]
-# rownames(curationTissue) <- curationTissue_uniqueid
-
-# cell_all <- read.csv("~/Desktop/getgcsi_2018-master/annotation/cell_annotation_all.csv", sep=",", comment.char="#", na.strings=c("", " ", "NA"))
-
-
-# matched_missing <- matchToIDTable(curationTissue_missing, cell_all, "gCSI.cellid")
-# matched_missing[matched_missing=="character(0)"] <- NA
-# still_missing <- which(is.na(matched_missing))
-# still_missing <- c('HCC70','A3-KAW','A4-Fuk','COLO-849','DMS-53','DMS-79','HCC-1359','MCF10A','MT3','OAW-28','SW1417')
-# matched_missing[which(is.na(matched_missing))] <- still_missing
-# matched_missing <- as.character(matched_missing)
-# curationTissue[673:787,] <- NA
-# curationTissue$gCSI.tissueid[673:787] <- cell_all$unique.tissueid[which(matched_missing %in% cell_all$unique.cellid)]
-# curationTissue$unique.tissueid[673:787] <- cell_all$unique.tissueid[which(matched_missing %in% cell_all$unique.cellid)]
-# rownames(curationTissue)[673:787] <- curationCell$unique.cellid[match(curationTissue_missing,curationCell$gCSI.cellid)]
-
-# cell <- gCSI_2017@cell
-# cell[411:787,] <- NA
-# cell$unique.id[411:787] <- curationCell$unique.cellid[which(!curationCell$gCSI.cellid %in% rownames(cell))]
-# cell$CellLineName[411:787] <- curationCell$gCSI.cellid[which(!curationCell$unique.cellid %in% rownames(cell))]
-# rownames(cell)[411:787] <- cell$unique.id[411:787]
-
-# ####PUBLISHED METRICS#####
-
-# gCSI_GR_AOC_Pub <- read.csv("/Users/anthonymammoliti/Desktop/getgcsi_2018-master/2018/sensitivity/gCSI_GRmetrics_v1.2.tsv", sep="\t")
-
-
-# #match to cellosaurus
-
-# cellosaurus <- read.xlsx("~/Desktop/annotations/cellosaurus_names.xlsx", na.strings=c("", " ", "NA"))
-
-
-# gCSI_GR_AOC_Pub$CellLineName[grep("1-10", gCSI_GR_AOC_Pub$CellLineName)] <- "NB-TU-1-10"
-
-# cello_temp <- cellosaurus
-# cello_temp$lab_annotation <-  tolower(gsub(badchars, "",cello_temp$lab_annotation))
-
-# gCSI_GR_AOC_Temp <-  gCSI_GR_AOC_Pub
-# gCSI_GR_AOC_Temp$CellLineName <- tolower(gsub(badchars, "",gCSI_GR_AOC_Temp$CellLineName))
-
-# cello_matched <- cellosaurus$cellosaurus.name[match(gCSI_GR_AOC_Temp$CellLineName, cello_temp$lab_annotation)]
-# gCSI_GR_AOC_Pub$CellLineName <- cello_matched
-
-
-# #match to pubchem
-
-# pubchem <- read.xlsx("~/Desktop/annotations/drugsWithids_pub.xlsx", na.strings=c("", " ", "NA"))
-# pubchem$Selected.name[which(is.na(pubchem$Selected.name))] <- pubchem$unique.drugid[which(is.na(pubchem$Selected.name))]
-
-# gCSI_GR_AOC_Pub$DrugName[grep("Vinblastine", gCSI_GR_AOC_Pub$DrugName)] <- "Vincaleukoblastine"
-# gCSI_GR_AOC_Pub$DrugName[grep("TGX-221", gCSI_GR_AOC_Pub$DrugName)] <- "TGX221"
-# gCSI_GR_AOC_Pub$DrugName[grep("GDC-0941", gCSI_GR_AOC_Pub$DrugName)] <- "Pictilisib"
-# gCSI_GR_AOC_Pub$DrugName[grep("CAL-101", gCSI_GR_AOC_Pub$DrugName)] <- "Idelalisib"
-# gCSI_GR_AOC_Pub$DrugName[grep("AZD-7762", gCSI_GR_AOC_Pub$DrugName)] <- "AZD7762"
-# gCSI_GR_AOC_Pub$DrugName[grep("PLX-4720", gCSI_GR_AOC_Pub$DrugName)] <- "PLX4720"
-# gCSI_GR_AOC_Pub$DrugName[grep("5-FU", gCSI_GR_AOC_Pub$DrugName)] <- "5-Fluorouracil"
-# gCSI_GR_AOC_Pub$DrugName[grep("AZD-8055", gCSI_GR_AOC_Pub$DrugName)] <- "AZD8055"
-# gCSI_GR_AOC_Pub$DrugName[grep("JQ1", gCSI_GR_AOC_Pub$DrugName)] <- "JQ1 compound"
-# gCSI_GR_AOC_Pub$DrugName[grep("CHIR-99021", gCSI_GR_AOC_Pub$DrugName)] <- "Chir-99021"
-# gCSI_GR_AOC_Pub$DrugName[grep("NU 7441", gCSI_GR_AOC_Pub$DrugName)] <- "NU-7441"
-# gCSI_GR_AOC_Pub$DrugName[grep("17-AAG", gCSI_GR_AOC_Pub$DrugName)] <- "Tanespimycin"
-# gCSI_GR_AOC_Pub$DrugName[grep("MLN_2480", gCSI_GR_AOC_Pub$DrugName)] <- "MLN2480"
-
-# pubchem_matched <- pubchem$Selected.name[match(gCSI_GR_AOC_Pub$DrugName, pubchem$Selected.name)]
-# gCSI_GR_AOC_Pub$DrugName <- pubchem_matched
-
-# uids <- unique(sprintf("%s__%s__%s",gCSI_GR_AOC_Pub$CellLineName,
-#                        gCSI_GR_AOC_Pub$DrugName,
-#                        gCSI_GR_AOC_Pub$ExperimentNumber))
-
-# rownames(gCSI_GR_AOC_Pub) <- uids
-
-# sensitivityProfiles_2018[,"GR_AOC_published"] <- as.numeric(gCSI_GR_AOC_Pub$GR_AOC[match(rownames(sensitivityProfiles_2018), rownames(gCSI_GR_AOC_Pub))])
-# sensitivityProfiles_2018[,"meanviability_published"] <- as.numeric(gCSI_GR_AOC_Pub$meanviability[match(rownames(sensitivityProfiles_2018), rownames(gCSI_GR_AOC_Pub))])
-# sensitivityProfiles_2018[,"GRmax_published"] <- as.numeric(gCSI_GR_AOC_Pub$GRmax[match(rownames(sensitivityProfiles_2018), rownames(gCSI_GR_AOC_Pub))])
-# sensitivityProfiles_2018[,"GRinf_published"] <- as.numeric(gCSI_GR_AOC_Pub$GRinf[match(rownames(sensitivityProfiles_2018), rownames(gCSI_GR_AOC_Pub))])
-# sensitivityProfiles_2018[,"GEC50_published"] <- as.numeric(gCSI_GR_AOC_Pub$GEC50[match(rownames(sensitivityProfiles_2018), rownames(gCSI_GR_AOC_Pub))])
-# sensitivityProfiles_2018[,"GR50_published"] <- as.numeric(gCSI_GR_AOC_Pub$GR50[match(rownames(sensitivityProfiles_2018), rownames(gCSI_GR_AOC_Pub))])
-
 
