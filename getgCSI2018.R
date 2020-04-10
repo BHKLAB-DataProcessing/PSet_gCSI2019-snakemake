@@ -356,6 +356,7 @@ drug_all <- drug_all[rownames(druginfo),]
 druginfo[,c("smiles","inchikey","cid","FDA")] <- drug_all[,c("smiles","inchikey","cid","FDA")]
 druginfo$gCSI.drugid <- NULL
 colnames(druginfo)[which(names(druginfo) == "unique.drugid")] <- "drugid"
+curationDrug <- curationDrug[rownames(druginfo),]
 
 z <- list()
 
