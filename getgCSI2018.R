@@ -483,7 +483,7 @@ cellInfo$CellLine.Type <- cell_type
 metastatic <- cell_all$Metastatic[match(cellInfo$cellid, cell_all$unique.cellid)]
 cellInfo$Metastatic <- metastatic
 		 
-standardize <- standardizeRawDataConcRange(sens.info = sensitivity.info, sens.raw = raw.sensitivity)
+# standardize <- standardizeRawDataConcRange(sens.info = sensitivity.info, sens.raw = raw.sensitivity)
 		 
 
 gCSI_2018 <- PharmacoSet(molecularProfiles=z,
