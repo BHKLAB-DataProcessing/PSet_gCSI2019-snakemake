@@ -5,12 +5,12 @@ library(rhdf5)
 library(gdata)
 library(readxl)
 library(openxlsx)
-#library(CoreGx)
 library(Biobase)
 library(reshape2)
 library(abind)
 library(data.table)
 library(parallel)
+library(CoreGx)
 library(SummarizedExperiment)
 
 verbose=FALSE
@@ -281,7 +281,7 @@ rownames(cellInfo) <- reps
 #add missing cell lines to cell info
 cellInfo <- as.data.frame(cellInfo)
 
-cellinall <- unionList(rnaseq_cellid_all, sensitivity.info$cellid, cnv$cellid, mut$cellid)
+cellinall <- CoreGx::.unionList(rnaseq_cellid_all, sensitivity.info$cellid, cnv$cellid, mut$cellid)
 
 newCells <- setdiff(cellinall, rownames(cellInfo))
 
