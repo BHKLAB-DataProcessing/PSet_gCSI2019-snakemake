@@ -8,8 +8,10 @@ S3 = S3RemoteProvider(
 )
 
 prefix = config["prefix"]
-rna_tool = 'Kallisto-0.46.1'
-rna_ref = 'Gencode_v33'
+filename = config["filename"]
+rna_tool = config["rna_tool"]
+rna_ref = config["rna_ref"]
+
 basePath = "https://orcestradata.blob.core.windows.net/gcsi/gCSI/2018"
 
 rna_tool_dir = rna_tool.replace('-', '_')
@@ -28,7 +30,7 @@ rule get_gCSI2019:
         S3.remote(prefix + 'download/' + rna_ref_file),
         S3.remote(prefix + "download/gCSI_rnaseq_meta.csv")
     output:
-        prefix + "gCSI2019.rds"
+        S3.remote(prefix + filename)
     shell:
         """
         Rscript scripts/getgCSI2019.R {prefix} {rna_tool} {rna_ref}
