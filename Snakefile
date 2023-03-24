@@ -31,6 +31,9 @@ rule get_gCSI2019:
         S3.remote(prefix + "download/gCSI_rnaseq_meta.csv")
     output:
         S3.remote(prefix + filename)
+    resources:
+        mem_mb = 10000,
+        disk_mb = 8000
     shell:
         """
         Rscript scripts/getgCSI2019.R {prefix} {filename} {rna_tool} {rna_ref}
