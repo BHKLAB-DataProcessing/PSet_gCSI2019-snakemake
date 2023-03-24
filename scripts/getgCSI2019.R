@@ -22,8 +22,9 @@ args <- commandArgs(trailingOnly = TRUE)
 download_dir <- paste0(args[[1]], "download")
 processed_dir <- paste0(args[[1]], "processed")
 output_dir <- args[[1]]
-tools <- args[[2]]
-transcriptome <- args[[3]]
+filename <- args[[2]]
+tools <- args[[3]]
+transcriptome <- args[[4]]
 
 # download_dir <- "/Users/minoru/Code/bhklab/DataProcessing/PSet/PSet_gCSI2019-snakemake/download"
 # processed_dir <- "/Users/minoru/Code/bhklab/DataProcessing/PSet/PSet_gCSI2019-snakemake/processed"
@@ -629,7 +630,7 @@ noisy_out <- filterNoisyCurves2(gCSI_2018)
 print("filter done")
 gCSI_2018@sensitivity$profiles[noisy_out$noisy, ] <- NA
 
-saveRDS(gCSI_2018, file = paste0(output_dir, "gCSI2019.rds"))
+saveRDS(gCSI_2018, file = paste0(output_dir, filename))
 
 unlink(file.path(processed_dir, tool), recursive = TRUE)
 

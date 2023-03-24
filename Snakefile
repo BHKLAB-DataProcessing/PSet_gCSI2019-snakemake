@@ -33,7 +33,7 @@ rule get_gCSI2019:
         S3.remote(prefix + filename)
     shell:
         """
-        Rscript scripts/getgCSI2019.R {prefix} {rna_tool} {rna_ref}
+        Rscript scripts/getgCSI2019.R {prefix} {filename} {rna_tool} {rna_ref}
         """
 
 rule recalculate_and_assemble:
