@@ -33,13 +33,16 @@ transcriptome <- args[[4]]
 # transcriptome <- "Gencode_v33"
 
 tools <- gsub("-", "_", tools)
-untar(file.path(download_dir, paste0(tools, ".tar.gz")), exdir = download_dir)
+# untar(file.path(download_dir, paste0(tools, ".tar.gz")), exdir = download_dir)
 tool_path <- expand.grid(a = tools, b = transcriptome)
 tool_path <- paste0(tool_path$a, "_", tool_path$b)
 
-untar(tarfile = file.path(download_dir, paste0(tools, ".tar.gz")), exdir = processed_dir)
+# untar(tarfile = file.path(download_dir, paste0(tools, ".tar.gz")), exdir = processed_dir)
 
-rnaseq_results <- list()
+rnaseq_results <- readRDS(file.path(processed_dir, 'rnaseq_results.rds'))
+curationCell <- readRDS(file.path(processed_dir, 'curationCell.rds'))
+curationTissue <- readRDS(file.path(processed_dir, 'curationTissue.rds'))
+curationDrug <- readRDS(file.path(processed_dir, 'curationDrug.rds'))
 
 # myDirPrefix <- "/pfs/"
 # args = commandArgs(trailingOnly=TRUE)
@@ -75,22 +78,20 @@ load(file.path(processed_dir, "profiles.RData"))
 load(file.path(processed_dir, "sens.data.RData"))
 load(file.path(download_dir, "gCSI_molData.RData"))
 
-
 cell_all <- read.csv(file.path(download_dir, "cell_annotation_all.csv"), na.strings = c("", " ", "NA"))
 drug_all <- read.csv(file.path(download_dir, "drugs_with_ids.csv"), na.strings = c("", " ", "NA"))
 
-
-curationCell <- cell_all[apply(!is.na(cell_all[, c("gCSI.cellid", "GNE.cellid")]), 1, any), ]
-curationTissue <- cell_all[apply(!is.na(cell_all[, c("gCSI.cellid", "GNE.cellid")]), 1, any), ]
-curationCell <- curationCell[, c("unique.cellid", "gCSI.cellid", "GNE.cellid")]
-curationTissue <- curationTissue[, c("unique.tissueid", "gCSI.tissueid", "GNE.tissueid")]
-
-rownames(curationTissue) <- curationCell[, "unique.cellid"]
-rownames(curationCell) <- curationCell[, "unique.cellid"]
-
-curationDrug <- drug_all[which(!is.na(drug_all[, "gCSI.drugid"])), ]
-curationDrug <- curationDrug[, c("unique.drugid", "gCSI.drugid")]
-rownames(curationDrug) <- curationDrug[, "unique.drugid"]
+# curationCell <- cell_all[apply(!is.na(cell_all[, c("gCSI.cellid", "GNE.cellid")]), 1, any), ]
+# curationTissue <- cell_all[apply(!is.na(cell_all[, c("gCSI.cellid", "GNE.cellid")]), 1, any), ]
+# curationCell <- curationCell[, c("unique.cellid", "gCSI.cellid", "GNE.cellid")]
+# curationTissue <- curationTissue[, c("unique.tissueid", "gCSI.tissueid", "GNE.tissueid")]
+# 
+# rownames(curationTissue) <- curationCell[, "unique.cellid"]
+# rownames(curationCell) <- curationCell[, "unique.cellid"]
+# 
+# curationDrug <- drug_all[which(!is.na(drug_all[, "gCSI.drugid"])), ]
+# curationDrug <- curationDrug[, c("unique.drugid", "gCSI.drugid")]
+# rownames(curationDrug) <- curationDrug[, "unique.drugid"]
 
 stopifnot(setequal(rownames(sensitivity.info), rownames(sensitivity.published)))
 stopifnot(setequal(rownames(raw.sensitivity), rownames(sensitivity.published)))
@@ -151,150 +152,150 @@ mapInfo <- data.frame(
 stopifnot(!anyNA(mapInfo[, 2]))
 sensitivity.info$drugid <- mapInfo[match(sensitivity.info$drugid, mapInfo[, 1]), 2]
 
-summarizeRnaSeq <- function(dir,
-                            features_annotation,
-                            samples_annotation,
-                            method) {
-  library(Biobase)
-  library(readr)
-  library(tximport)
-
-  load(features_annotation)
-
-  tx2gene <- as.data.frame(cbind("transcript" = tx2gene$transcripts, "gene" = tx2gene$genes))
-
-  files <- list.files(dir, recursive = TRUE, full.names = T)
-  if (method == "kallisto") {
-    resFiles <- grep("abundance.h5", files)
-  } else {
-    resFiles <- grep("quant.sf", files)
-  }
-  resFiles <- files[resFiles]
-  length(resFiles)
-  names(resFiles) <- basename(dirname(resFiles))
-
-  if (features_annotation == file.path(download_dir, "Ensembl.v99.annotation.RData")) {
-    txi <- tximport(resFiles, type = method, tx2gene = tx2gene, ignoreAfterBar = TRUE, ignoreTxVersion = TRUE)
-  } else {
-    txi <- tximport(resFiles, type = method, tx2gene = tx2gene, ignoreAfterBar = TRUE, ignoreTxVersion = FALSE)
-  }
-
-  head(txi$counts[, 1:5])
-  dim(txi$counts)
-
-  xx <- txi$abundance
-  gene.exp <- Biobase::ExpressionSet(log2(xx + 0.001))
-  fData(gene.exp) <- features_gene[featureNames(gene.exp), ]
-  pData(gene.exp) <- samples_annotation[sampleNames(gene.exp), ]
-  annotation(gene.exp) <- "rnaseq"
-
-  xx <- txi$counts
-  gene.count <- Biobase::ExpressionSet(log2(xx + 1))
-  fData(gene.count) <- features_gene[featureNames(gene.count), ]
-  pData(gene.count) <- samples_annotation[sampleNames(gene.count), ]
-  annotation(gene.count) <- "rnaseq"
-
-  txii <- tximport(resFiles, type = method, txOut = T)
-
-  if (features_annotation == file.path(download_dir, "Ensembl.v99.annotation.RData")) {
-    # remove non-coding transcripts in ensembl
-    rownames(txii$abundance) <- gsub("\\..*", "", rownames(txii$abundance))
-    txii$abundance[which(!rownames(txii$abundance) %in% features_transcript$transcript_id)]
-    missing_transcript <- rownames(txii$abundance)[which(!rownames(txii$abundance) %in% features_transcript$transcript_id)]
-    txii$abundance <- txii$abundance[-which(rownames(txii$abundance) %in% missing_transcript), ]
-  }
-
-  xx <- txii$abundance
-  transcript.exp <- Biobase::ExpressionSet(log2(xx[, 1:length(resFiles)] + 0.001))
-  if (features_annotation == file.path(download_dir, "Gencode.v33.annotation.RData") || features_annotation == file.path(download_dir, "Gencode.v33lift37.annotation.RData")) {
-    featureNames(transcript.exp) <- gsub("\\|.*", "", featureNames(transcript.exp))
-    fData(transcript.exp) <- features_transcript[featureNames(transcript.exp), ]
-  } else {
-    fData(transcript.exp) <- features_transcript[featureNames(transcript.exp), ]
-  }
-  pData(transcript.exp) <- samples_annotation[sampleNames(transcript.exp), ]
-  annotation(transcript.exp) <- "isoforms"
-
-
-  if (features_annotation == file.path(download_dir, "Ensembl.v99.annotation.RData")) {
-    # remove non-coding transcripts in ensembl
-    rownames(txii$counts) <- gsub("\\..*", "", rownames(txii$counts))
-    txii$counts <- txii$counts[-which(rownames(txii$counts) %in% missing_transcript), ]
-  }
-  xx <- txii$counts
-  transcript.count <- Biobase::ExpressionSet(log2(xx[, 1:length(resFiles)] + 1))
-  if (features_annotation == file.path(download_dir, "Gencode.v33.annotation.RData") || features_annotation == file.path(download_dir, "Gencode.v33lift37.annotation.RData")) {
-    featureNames(transcript.count) <- gsub("\\|.*", "", featureNames(transcript.count))
-    fData(transcript.count) <- features_transcript[featureNames(transcript.count), ]
-  } else {
-    fData(transcript.count) <- features_transcript[featureNames(transcript.count), ]
-  }
-  pData(transcript.count) <- samples_annotation[sampleNames(transcript.count), ]
-  annotation(transcript.count) <- "isoforms"
-
-  return(list(
-    "rnaseq" = gene.exp,
-    "rnaseq.counts" = gene.count,
-    "isoforms" = transcript.exp,
-    "isoforms.counts" = transcript.count
-  ))
-}
-
-
-rnaseq.sampleinfo <- read.csv(file = file.path(download_dir, "gCSI_rnaseq_meta.csv"), stringsAsFactors = FALSE, row.names = 1)
-rnaseq.sampleinfo[, "cellid"] <- matchToIDTable(ids = rnaseq.sampleinfo[, "Cell_line"], tbl = curationCell, column = "GNE.cellid", returnColumn = "unique.cellid")
-
-
-for (r in 1:length(tool_path)) {
-  print(tool_path[r])
-  if (length(grep(pattern = "Kallisto", x = tool_path[r])) > 0) {
-    tool <- sub("(_[^_]+)_.*", "\\1", tool_path[r])
-    # tdir = paste0("gcsi_rnaseq_",gsub(".","_",tolower(tool), fixed = T), "/",  tool, "/", tool, "/")
-    rnatool <- "kallisto"
-  } else {
-    tool <- sub("(_[^_]+)_.*", "\\1", tool_path[r])
-    # tdir = paste0("gcsi_rnaseq_",gsub(".","_",tolower(tool), fixed = T), "/",  tool, "/", tool, "/")
-    rnatool <- "salmon"
-  }
-
-
-  if (length(grep(pattern = "lift37", x = tool_path[r])) > 0) {
-    annot <- file.path(download_dir, "Gencode.v33lift37.annotation.RData")
-  } else if (length(grep(pattern = "v33", x = tool_path[r])) > 0) {
-    annot <- file.path(download_dir, "Gencode.v33.annotation.RData")
-  } else {
-    annot <- file.path(download_dir, "Ensembl.v99.annotation.RData")
-  }
-  print(annot)
-
-  rnaseq <- summarizeRnaSeq(
-    dir = file.path(processed_dir, tool, tool_path[r]),
-    features_annotation = annot,
-    samples_annotation = rnaseq.sampleinfo,
-    method = rnatool
-  )
-
-
-  reps <- matchToIDTable(rnaseq$rnaseq$Cell_line, curationCell, "GNE.cellid", "unique.cellid")
-  stopifnot(!anyNA(reps))
-  rnaseq$rnaseq$cellid <- reps
-
-  reps <- matchToIDTable(rnaseq$rnaseq.counts$Cell_line, curationCell, "GNE.cellid", "unique.cellid")
-  stopifnot(!anyNA(reps))
-  rnaseq$rnaseq.counts$cellid <- reps
-
-  reps <- matchToIDTable(rnaseq$isoforms$Cell_line, curationCell, "GNE.cellid", "unique.cellid")
-  stopifnot(!anyNA(reps))
-  rnaseq$isoforms$cellid <- reps
-
-  reps <- matchToIDTable(rnaseq$isoforms.counts$Cell_line, curationCell, "GNE.cellid", "unique.cellid")
-  stopifnot(!anyNA(reps))
-  rnaseq$isoforms.counts$cellid <- reps
-
-  rnaseq_results <- c(rnaseq_results, c(
-    rnaseq <- setNames(rnaseq, paste0(tool, ".", names(rnaseq)))
-  ))
-}
+# summarizeRnaSeq <- function(dir,
+#                             features_annotation,
+#                             samples_annotation,
+#                             method) {
+#   library(Biobase)
+#   library(readr)
+#   library(tximport)
+# 
+#   load(features_annotation)
+# 
+#   tx2gene <- as.data.frame(cbind("transcript" = tx2gene$transcripts, "gene" = tx2gene$genes))
+# 
+#   files <- list.files(dir, recursive = TRUE, full.names = T)
+#   if (method == "kallisto") {
+#     resFiles <- grep("abundance.h5", files)
+#   } else {
+#     resFiles <- grep("quant.sf", files)
+#   }
+#   resFiles <- files[resFiles]
+#   length(resFiles)
+#   names(resFiles) <- basename(dirname(resFiles))
+# 
+#   if (features_annotation == file.path(download_dir, "Ensembl.v99.annotation.RData")) {
+#     txi <- tximport(resFiles, type = method, tx2gene = tx2gene, ignoreAfterBar = TRUE, ignoreTxVersion = TRUE)
+#   } else {
+#     txi <- tximport(resFiles, type = method, tx2gene = tx2gene, ignoreAfterBar = TRUE, ignoreTxVersion = FALSE)
+#   }
+# 
+#   head(txi$counts[, 1:5])
+#   dim(txi$counts)
+# 
+#   xx <- txi$abundance
+#   gene.exp <- Biobase::ExpressionSet(log2(xx + 0.001))
+#   fData(gene.exp) <- features_gene[featureNames(gene.exp), ]
+#   pData(gene.exp) <- samples_annotation[sampleNames(gene.exp), ]
+#   annotation(gene.exp) <- "rnaseq"
+# 
+#   xx <- txi$counts
+#   gene.count <- Biobase::ExpressionSet(log2(xx + 1))
+#   fData(gene.count) <- features_gene[featureNames(gene.count), ]
+#   pData(gene.count) <- samples_annotation[sampleNames(gene.count), ]
+#   annotation(gene.count) <- "rnaseq"
+# 
+#   txii <- tximport(resFiles, type = method, txOut = T)
+# 
+#   if (features_annotation == file.path(download_dir, "Ensembl.v99.annotation.RData")) {
+#     # remove non-coding transcripts in ensembl
+#     rownames(txii$abundance) <- gsub("\\..*", "", rownames(txii$abundance))
+#     txii$abundance[which(!rownames(txii$abundance) %in% features_transcript$transcript_id)]
+#     missing_transcript <- rownames(txii$abundance)[which(!rownames(txii$abundance) %in% features_transcript$transcript_id)]
+#     txii$abundance <- txii$abundance[-which(rownames(txii$abundance) %in% missing_transcript), ]
+#   }
+# 
+#   xx <- txii$abundance
+#   transcript.exp <- Biobase::ExpressionSet(log2(xx[, 1:length(resFiles)] + 0.001))
+#   if (features_annotation == file.path(download_dir, "Gencode.v33.annotation.RData") || features_annotation == file.path(download_dir, "Gencode.v33lift37.annotation.RData")) {
+#     featureNames(transcript.exp) <- gsub("\\|.*", "", featureNames(transcript.exp))
+#     fData(transcript.exp) <- features_transcript[featureNames(transcript.exp), ]
+#   } else {
+#     fData(transcript.exp) <- features_transcript[featureNames(transcript.exp), ]
+#   }
+#   pData(transcript.exp) <- samples_annotation[sampleNames(transcript.exp), ]
+#   annotation(transcript.exp) <- "isoforms"
+# 
+# 
+#   if (features_annotation == file.path(download_dir, "Ensembl.v99.annotation.RData")) {
+#     # remove non-coding transcripts in ensembl
+#     rownames(txii$counts) <- gsub("\\..*", "", rownames(txii$counts))
+#     txii$counts <- txii$counts[-which(rownames(txii$counts) %in% missing_transcript), ]
+#   }
+#   xx <- txii$counts
+#   transcript.count <- Biobase::ExpressionSet(log2(xx[, 1:length(resFiles)] + 1))
+#   if (features_annotation == file.path(download_dir, "Gencode.v33.annotation.RData") || features_annotation == file.path(download_dir, "Gencode.v33lift37.annotation.RData")) {
+#     featureNames(transcript.count) <- gsub("\\|.*", "", featureNames(transcript.count))
+#     fData(transcript.count) <- features_transcript[featureNames(transcript.count), ]
+#   } else {
+#     fData(transcript.count) <- features_transcript[featureNames(transcript.count), ]
+#   }
+#   pData(transcript.count) <- samples_annotation[sampleNames(transcript.count), ]
+#   annotation(transcript.count) <- "isoforms"
+# 
+#   return(list(
+#     "rnaseq" = gene.exp,
+#     "rnaseq.counts" = gene.count,
+#     "isoforms" = transcript.exp,
+#     "isoforms.counts" = transcript.count
+#   ))
+# }
+# 
+# 
+# rnaseq.sampleinfo <- read.csv(file = file.path(download_dir, "gCSI_rnaseq_meta.csv"), stringsAsFactors = FALSE, row.names = 1)
+# rnaseq.sampleinfo[, "cellid"] <- matchToIDTable(ids = rnaseq.sampleinfo[, "Cell_line"], tbl = curationCell, column = "GNE.cellid", returnColumn = "unique.cellid")
+# 
+# 
+# for (r in 1:length(tool_path)) {
+#   print(tool_path[r])
+#   if (length(grep(pattern = "Kallisto", x = tool_path[r])) > 0) {
+#     tool <- sub("(_[^_]+)_.*", "\\1", tool_path[r])
+#     # tdir = paste0("gcsi_rnaseq_",gsub(".","_",tolower(tool), fixed = T), "/",  tool, "/", tool, "/")
+#     rnatool <- "kallisto"
+#   } else {
+#     tool <- sub("(_[^_]+)_.*", "\\1", tool_path[r])
+#     # tdir = paste0("gcsi_rnaseq_",gsub(".","_",tolower(tool), fixed = T), "/",  tool, "/", tool, "/")
+#     rnatool <- "salmon"
+#   }
+# 
+# 
+#   if (length(grep(pattern = "lift37", x = tool_path[r])) > 0) {
+#     annot <- file.path(download_dir, "Gencode.v33lift37.annotation.RData")
+#   } else if (length(grep(pattern = "v33", x = tool_path[r])) > 0) {
+#     annot <- file.path(download_dir, "Gencode.v33.annotation.RData")
+#   } else {
+#     annot <- file.path(download_dir, "Ensembl.v99.annotation.RData")
+#   }
+#   print(annot)
+# 
+#   rnaseq <- summarizeRnaSeq(
+#     dir = file.path(processed_dir, tool, tool_path[r]),
+#     features_annotation = annot,
+#     samples_annotation = rnaseq.sampleinfo,
+#     method = rnatool
+#   )
+# 
+# 
+#   reps <- matchToIDTable(rnaseq$rnaseq$Cell_line, curationCell, "GNE.cellid", "unique.cellid")
+#   stopifnot(!anyNA(reps))
+#   rnaseq$rnaseq$cellid <- reps
+# 
+#   reps <- matchToIDTable(rnaseq$rnaseq.counts$Cell_line, curationCell, "GNE.cellid", "unique.cellid")
+#   stopifnot(!anyNA(reps))
+#   rnaseq$rnaseq.counts$cellid <- reps
+# 
+#   reps <- matchToIDTable(rnaseq$isoforms$Cell_line, curationCell, "GNE.cellid", "unique.cellid")
+#   stopifnot(!anyNA(reps))
+#   rnaseq$isoforms$cellid <- reps
+# 
+#   reps <- matchToIDTable(rnaseq$isoforms.counts$Cell_line, curationCell, "GNE.cellid", "unique.cellid")
+#   stopifnot(!anyNA(reps))
+#   rnaseq$isoforms.counts$cellid <- reps
+# 
+#   rnaseq_results <- c(rnaseq_results, c(
+#     rnaseq <- setNames(rnaseq, paste0(tool, ".", names(rnaseq)))
+#   ))
+# }
 
 rnaseq_cellid_all <- pData(rnaseq_results[[1]])[, "cellid"]
 reps <- matchToIDTable(rownames(cellInfo), curationCell, "gCSI.cellid", "unique.cellid")
@@ -632,7 +633,7 @@ gCSI_2018@sensitivity$profiles[noisy_out$noisy, ] <- NA
 
 saveRDS(gCSI_2018, file = paste0(output_dir, filename))
 
-unlink(file.path(processed_dir, tool), recursive = TRUE)
+# unlink(file.path(processed_dir, tool), recursive = TRUE)
 
 # dataset <- "gCSI2"
 # #output ORCESTRA_ID and Pachyderm commit id

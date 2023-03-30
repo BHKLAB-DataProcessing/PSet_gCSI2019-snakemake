@@ -23,20 +23,44 @@ rule get_gCSI2019:
     input:
         S3.remote(prefix + "download/gCSI_molData.RData"),
         S3.remote(prefix + "processed/profiles.RData"),
-        S3.remote(prefix + "download/" + rna_tool_dir + '.tar.gz'),
         S3.remote(prefix + "processed/sens.data.RData"),
         S3.remote(prefix + "download/drugs_with_ids.csv"),
         S3.remote(prefix + "download/cell_annotation_all.csv"),
-        S3.remote(prefix + 'download/' + rna_ref_file),
-        S3.remote(prefix + "download/gCSI_rnaseq_meta.csv")
+        S3.remote(prefix + "processed/curationCell.rds"),
+        S3.remote(prefix + "processed/curationTissue.rds"),
+        S3.remote(prefix + "processed/curationDrug.rds"),
+        S3.remote(prefix + "processed/rnaseq_results.rds")
     output:
         S3.remote(prefix + filename)
-    resources:
-        mem_mb = 10000,
-        disk_mb = 18000
     shell:
         """
         Rscript scripts/getgCSI2019.R {prefix} {filename} {rna_tool} {rna_ref}
+        """
+
+rule process_rna_seq:
+    input:
+        S3.remote(prefix + "processed/curationCell.rds"),
+        S3.remote(prefix + "download/gCSI_rnaseq_meta.csv"),
+        S3.remote(prefix + "download/" + rna_tool_dir + '.tar.gz'),
+        S3.remote(prefix + 'download/' + rna_ref_file),
+    output:
+        S3.remote(prefix + "processed/rnaseq_results.rds")
+    shell:
+        """
+        Rscript scripts/processRNAseq.R {prefix} {rna_tool} {rna_ref}
+        """
+
+rule get_curation_objects:
+    input:
+        S3.remote(prefix + "download/drugs_with_ids.csv"),
+        S3.remote(prefix + "download/cell_annotation_all.csv"),
+    output:
+        S3.remote(prefix + "processed/curationCell.rds"),
+        S3.remote(prefix + "processed/curationTissue.rds"),
+        S3.remote(prefix + "processed/curationDrug.rds"),
+    shell:
+        """
+        Rscript scripts/getCurationObjects.R {prefix}
         """
 
 rule recalculate_and_assemble:
